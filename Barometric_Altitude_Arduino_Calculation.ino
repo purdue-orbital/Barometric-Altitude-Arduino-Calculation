@@ -74,6 +74,8 @@ int igniter = 3;
 int k = 0;
 // global var for altitude
 double global_alt; 
+// counter for consecutive readings of an altitude above 25 KM
+int above_25_counter;
 
 void setup() {
 
@@ -203,7 +205,7 @@ void loop() {
 	// SECTION 4: Ignition through a transistor
 
 	// Ignition parameters
-	if (altitude_now >= 100 && millis()>=1000) // altitude >= 50000 ft. (15240m) and time >= 20 min. (1200000 millisec)
+	if (altitude_now >= 100 && millis()>=1000 && above_25_counter >= 10) // altitude >= 50000 ft. (15240m) and time >= 20 min (1200000 millisec) and 10 or more consecutive readings above 25KM;
 	{
 		Serial.print("IGNITION!\n");
 		digitalWrite(igniter, HIGH);
@@ -255,12 +257,18 @@ double altitude(double P_Initial, double P_Final, double temperature)
 	
 	// if altitude is between 0km to ELEVEN_KM	
 	if (global_alt >= 0 && global_alt < ELEVEN_KM) {
+		// reset counter
+		above_25_counter = 0;
 		alt = (TEMP_CONST_INIT / A1) * (pow((P_Final/SEA_LEVEL_PRESSURE), ((-A1  * R) / G)) - 1);
 	// else if altitude is between ELEVEN_KM to TWENTY_FIVE_KM	
 	} else if (global_alt >= ELEVEN_KM && global_alt < TWENTY_FIVE_KM) {
+		// reset counter
+		above_25_counter = 0;
 		alt = ((-R * TEMP_CONST_GT_ELEVEN_KM) / G) * log(P_Final/ELEVEN_KM_PRESSURE) + ELEVEN_KM;
 	// else if altitude is between TWENTY_FIVE_KM to FORTY_SEVEN_KM	
 	} else if (global_alt >= TWENTY_FIVE_KM && global_alt < FORTY_SEVEN_KM) {
+		// increment global above_25_counter;
+		above_25_counter++;
 		alt = (TEMP_CONST_GT_ELEVEN_KM / A2) * (pow((P_Final/TWENTY_FIVE_KM_PRESSURE), ((-A2  * R) / G)) - 1) + TWENTY_FIVE_KM;
 	} else {
 		// else, altitude is reading outside the scope of what we can measure from the current sensor array, so return -1 to signal out of bounds error
